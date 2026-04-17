@@ -43,7 +43,7 @@ class GameLayout(FloatLayout):
         
         self.difficulty_spinner = Spinner(
             text=str(self.logic.num_colors),
-            values=('3', '4', '5', '6', '7', '8', '10', '12', '15', '20'),
+            values=tuple(str(i) for i in range(3, 21)),
             size_hint_x=None, width=80,
             background_normal='', background_color=[0.15, 0.15, 0.2, 1],
             color=[0.8, 0.8, 0.8, 1], font_name='Roboto'
@@ -169,11 +169,6 @@ class GameLayout(FloatLayout):
         end_x, end_y, diam_end = dst_tube_widget.get_ball_rect(len(self.logic.board[dst_idx]), False)
         
         dummy = Widget(size_hint=(None, None), size=(diam_start, diam_start), pos=(start_x, start_y))
-        with dummy.canvas:
-            self.d_color = Color(*color)
-            self.d_ellipse = Ellipse(pos=(0, 0), size=(diam_start, diam_start))
-            self.d_refl_color = Color(1, 1, 1, 0.6)
-            self.d_refl = Ellipse(pos=(0, 0), size=(diam_start*0.35, diam_start*0.35))
             
         def dummy_update(w, *args):
             w.canvas.clear()
@@ -182,7 +177,9 @@ class GameLayout(FloatLayout):
                 Ellipse(pos=w.pos, size=w.size)
                 Color(1, 1, 1, 0.6)
                 Ellipse(pos=(w.x + w.width*0.18, w.y + w.height*0.52), size=(w.width*0.35, w.height*0.35))
+        
         dummy.bind(pos=dummy_update, size=dummy_update)
+        dummy_update(dummy) # Force draw on frame 0 to prevent (0,0) ghosting
         
         self.logic.history.append(copy.deepcopy(self.logic.board))
         ball_val = self.logic.board[src_idx].pop()
