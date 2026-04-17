@@ -16,7 +16,7 @@ from ballsort.ui.tube_widget import TubeWidget
 from ballsort.ui.widgets import ModernButton
 
 class GameLayout(FloatLayout):
-    def __init__(self, **kwargs):
+    def __init__(self, save_file=None, **kwargs):
         super().__init__(**kwargs)
         
         # Deep Dark Background
@@ -30,7 +30,8 @@ class GameLayout(FloatLayout):
         self.main_box = BoxLayout(orientation='vertical', size_hint=(1, 1), pos_hint={'x': 0, 'y': 0})
         self.add_widget(self.main_box)
         
-        self.logic = BallSortLogic(num_colors=5, tube_height=4, num_empty_tubes=2)
+        # Initialize Logic (which handles file fetching invisibly if it exists)
+        self.logic = BallSortLogic(num_colors=5, tube_height=4, num_empty_tubes=2, save_file=save_file)
         self.colors_list = generate_kivy_colors(self.logic.num_colors)
         
         self.selected_tube_idx = None
@@ -123,10 +124,15 @@ class GameLayout(FloatLayout):
     def on_difficulty_change(self, *args):
         num_colors = int(self.difficulty_spinner.text)
         tube_height = int(self.height_spinner.text)
-        self.logic = BallSortLogic(num_colors=num_colors, tube_height=tube_height, num_empty_tubes=2)
-        self.colors_list = generate_kivy_colors(self.logic.num_colors)
-        self.selected_tube_idx = None
-        self.build_board()
+        
+        if num_colors != self.logic.num_colors or tube_height != self.logic.tube_height:
+            self.logic.num_colors = num_colors
+            self.logic.tube_height = tube_height
+            self.logic.generate_level() # Triggers the save_state functionality autonomously
+            
+            self.colors_list = generate_kivy_colors(self.logic.num_colors)
+            self.selected_tube_idx = None
+            self.build_board()
 
     def build_board(self):
         self.grid.clear_widgets()

@@ -1,43 +1,69 @@
 import copy
 import random
+import json
+import os
 
 class BallSortLogic:
-    def __init__(self, num_colors=5, tube_height=4, num_empty_tubes=2):
-        self.num_colors = num_colors
-        self.tube_height = tube_height
+    def __init__(self, num_colors=5, tube_height=4, num_empty_tubes=2, save_file=None):
+        self.save_file = save_file
         self.num_empty_tubes = num_empty_tubes
         self.board = []
         self.initial_board = []
         self.history = []
-        self.generate_level()
+        
+        # Attempt to load state, otherwise generate clean setup via arguments
+        if not self._load_state():
+            self.num_colors = num_colors
+            self.tube_height = tube_height
+            self.generate_level()
+
+    def _load_state(self):
+        if not self.save_file or not os.path.exists(self.save_file):
+            return False
+        try:
+            with open(self.save_file, 'r') as f:
+                data = json.load(f)
+            self.num_colors = data['num_colors']
+            self.tube_height = data['tube_height']
+            self.num_empty_tubes = data['num_empty_tubes']
+            self.initial_board = data['initial_board']
+            self.reset_level()
+            return True
+        except Exception:
+            return False
+
+    def save_state(self):
+        if not self.save_file:
+            return
+        try:
+            data = {
+                'num_colors': self.num_colors,
+                'tube_height': self.tube_height,
+                'num_empty_tubes': self.num_empty_tubes,
+                'initial_board': self.initial_board
+            }
+            with open(self.save_file, 'w') as f:
+                json.dump(data, f)
+        except Exception:
+            pass
 
     def generate_level(self):
         self.board = []
         self.history = []
         
-        # We will deal a completely chaotic, perfectly packed board.
-        # This guarantees every colored tube starts exactly full, making it vastly harder 
-        # and more complex to untangle properly.
-        # With 2 empty tubes + the `+ Empty Tube` cheat button available, any rare deadlock is gracefully bypassable.
-        
         while True:
-            # 1. Create a deck containing exactly `tube_height` balls for every color
             balls = []
             for i in range(self.num_colors):
                 balls.extend([i] * self.tube_height)
                 
-            # 2. Maximum chaos shuffle
             random.shuffle(balls)
             
-            # 3. Deal perfectly into tubes
             temp_board = []
             for i in range(self.num_colors):
                 start = i * self.tube_height
                 end = start + self.tube_height
                 temp_board.append(balls[start:end])
                 
-            # 4. Check to ensure we didn't randomly deal an already-solved tube, 
-            #    which would reduce the target difficulty.
             has_solved_tube = False
             for tube in temp_board:
                 if len(set(tube)) == 1:
@@ -48,12 +74,14 @@ class BallSortLogic:
                 self.board = temp_board
                 break
                 
-        # 5. Append perfectly empty tubes at the end
         for i in range(self.num_empty_tubes):
             self.board.append([])
             
         self.initial_board = copy.deepcopy(self.board)
         self.history = []
+        
+        # Commit structure automatically on generation
+        self.save_state()
 
     def reset_level(self):
         self.board = copy.deepcopy(self.initial_board)
@@ -93,7 +121,6 @@ class BallSortLogic:
         return False
 
     def add_empty_tube(self):
-        # The Cheat Button - essential for brute-forcing any extremely difficult seed
         self.board.append([])
 
     def is_win(self):
