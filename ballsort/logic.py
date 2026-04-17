@@ -22,19 +22,35 @@ class BallSortLogic:
         for _ in range(self.num_empty_tubes):
             self.board.append([])
             
-        # 2. Perform sequence of random valid moves to shuffle.
-        # Since forward and reverse moves share the exact same validation 
-        # constraints in Ball Sort, ANY valid sequence of moves from a 
-        # solved state is mathematically guaranteed to be solvable!
+        # 2. Perform sequence of random valid REVERSE moves to definitively scramble the puzzle.
+        # A valid reverse move taking a ball of color C from tube dst_idx to src_idx requires:
+        # - The tube we pull from MUST have C on top.
+        # - The tube we pull from, once C is removed, MUST be empty OR still have C on top.
         iterations = 0
         moves_done = 0
-        while moves_done < 200 and iterations < 1500:
+        while moves_done < 1500 and iterations < 10000:
             iterations += 1
             src_idx = random.randint(0, len(self.board) - 1)
             dst_idx = random.randint(0, len(self.board) - 1)
             
-            if src_idx != dst_idx and self.can_move(src_idx, dst_idx):
-                self._apply_move(src_idx, dst_idx)
+            if src_idx != dst_idx:
+                src_tube = self.board[src_idx]
+                dst_tube = self.board[dst_idx]
+                
+                # Check valid reverse move constraints:
+                if not src_tube or len(dst_tube) >= self.tube_height:
+                    continue
+                
+                color = src_tube[-1]
+                
+                # If we remove the top ball, does the source tube's new top match the valid forward rule?
+                # i.e., empty or matching color
+                if len(src_tube) > 1 and src_tube[-2] != color:
+                    continue
+                    
+                # Valid! Apply reverse move physically
+                ball = self.board[src_idx].pop()
+                self.board[dst_idx].append(ball)
                 moves_done += 1
         
         # Clear history to establish the "start" of the level
@@ -48,26 +64,22 @@ class BallSortLogic:
         dst_tube = self.board[dst_idx]
         
         if not src_tube:
-            return False  # Source is empty
+            return False
             
         if len(dst_tube) >= self.tube_height:
-            return False  # Target is full
+            return False
             
-        # Target must be empty, or its top ball must match the source's top ball
         moving_ball = src_tube[-1]
         if not dst_tube or dst_tube[-1] == moving_ball:
             return True
             
         return False
 
-    def _apply_move(self, src_idx, dst_idx):
-        ball = self.board[src_idx].pop()
-        self.board[dst_idx].append(ball)
-
     def move(self, src_idx, dst_idx):
         if self.can_move(src_idx, dst_idx):
             self.history.append(copy.deepcopy(self.board))
-            self._apply_move(src_idx, dst_idx)
+            ball = self.board[src_idx].pop()
+            self.board[dst_idx].append(ball)
             return True
         return False
 
@@ -78,12 +90,10 @@ class BallSortLogic:
         return False
 
     def add_empty_tube(self):
-        # We append a new empty tube without invalidating history
         self.board.append([])
 
     def is_win(self):
         for tube in self.board:
-            # Tube must be perfectly empty or perfectly full with one color
             if len(tube) == 0:
                 continue
             if len(tube) != self.tube_height:
