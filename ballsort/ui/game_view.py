@@ -37,23 +37,35 @@ class GameLayout(FloatLayout):
         self.animating = False
         
         # --- Top Menu Row ---
-        top_bar = BoxLayout(size_hint_y=0.1, padding=[20, 15, 20, 5], spacing=15)
+        top_bar = BoxLayout(size_hint_y=0.1, padding=[20, 15, 20, 5], spacing=10)
         
-        top_bar.add_widget(Label(text="Colors:", size_hint_x=None, width=70, font_size="16sp", bold=True))
+        top_bar.add_widget(Label(text="Colors:", size_hint_x=None, width=60, font_size="16sp", bold=True))
         
         self.difficulty_spinner = Spinner(
             text=str(self.logic.num_colors),
             values=tuple(str(i) for i in range(3, 21)),
-            size_hint_x=None, width=80,
+            size_hint_x=None, width=60,
             background_normal='', background_color=[0.15, 0.15, 0.2, 1],
             color=[0.8, 0.8, 0.8, 1], font_name='Roboto'
         )
         self.difficulty_spinner.bind(text=self.on_difficulty_change)
         top_bar.add_widget(self.difficulty_spinner)
         
+        top_bar.add_widget(Label(text="Height:", size_hint_x=None, width=60, font_size="16sp", bold=True))
+        
+        self.height_spinner = Spinner(
+            text=str(self.logic.tube_height),
+            values=tuple(str(i) for i in range(4, 11)),
+            size_hint_x=None, width=60,
+            background_normal='', background_color=[0.15, 0.15, 0.2, 1],
+            color=[0.8, 0.8, 0.8, 1], font_name='Roboto'
+        )
+        self.height_spinner.bind(text=self.on_difficulty_change)
+        top_bar.add_widget(self.height_spinner)
+        
         top_bar.add_widget(Widget())
         
-        btn_restart = ModernButton(text="New Game", bg_color=[0.2, 0.7, 0.4, 1], bg_color_down=[0.15, 0.5, 0.3, 1], size_hint_x=None, width=130)
+        btn_restart = ModernButton(text="New", bg_color=[0.2, 0.7, 0.4, 1], bg_color_down=[0.15, 0.5, 0.3, 1], size_hint_x=None, width=100)
         btn_restart.bind(on_release=self.on_restart)
         top_bar.add_widget(btn_restart)
         
@@ -104,9 +116,10 @@ class GameLayout(FloatLayout):
             self.grid.cols = math.ceil(num_tubes / rows)
             self.grid.rows = rows
 
-    def on_difficulty_change(self, spinner, text):
-        num_colors = int(text)
-        self.logic = BallSortLogic(num_colors=num_colors, tube_height=4, num_empty_tubes=2)
+    def on_difficulty_change(self, *args):
+        num_colors = int(self.difficulty_spinner.text)
+        tube_height = int(self.height_spinner.text)
+        self.logic = BallSortLogic(num_colors=num_colors, tube_height=tube_height, num_empty_tubes=2)
         self.colors_list = generate_kivy_colors(self.logic.num_colors)
         self.selected_tube_idx = None
         self.build_board()
