@@ -65,26 +65,26 @@ class GameLayout(FloatLayout):
         self.height_spinner.bind(text=self.on_difficulty_change)
         top_bar.add_widget(self.height_spinner)
         
-        btn_reset = ModernButton(text="Reset", font_size="14sp", bg_color=[0.8, 0.6, 0.2, 1], bg_color_down=[0.7, 0.5, 0.1, 1], size_hint_x=0.22)
-        btn_reset.bind(on_release=self.on_reset_level)
-        top_bar.add_widget(btn_reset)
+        btn_undo = ModernButton(text="Undo", font_size="12sp", bg_color=[0.25, 0.45, 0.8, 1], bg_color_down=[0.15, 0.35, 0.65, 1], size_hint_x=0.13)
+        btn_undo.bind(on_release=self.on_undo)
+        top_bar.add_widget(btn_undo)
         
-        btn_new = ModernButton(text="New", font_size="14sp", bg_color=[0.2, 0.7, 0.4, 1], bg_color_down=[0.15, 0.5, 0.3, 1], size_hint_x=0.22)
-        btn_new.bind(on_release=self.on_new_game)
-        top_bar.add_widget(btn_new)
+        btn_cheat = ModernButton(text="+Tube", font_size="12sp", bg_color=[0.8, 0.3, 0.4, 1], bg_color_down=[0.6, 0.2, 0.3, 1], size_hint_x=0.13)
+        btn_cheat.bind(on_release=self.on_add_tube)
+        top_bar.add_widget(btn_cheat)
         
         self.main_box.add_widget(top_bar)
         
         # --- Secondary Utility Toolbar ---
         tools_bar = BoxLayout(size_hint_y=0.1, padding=[dp(15), dp(5), dp(15), dp(5)], spacing=dp(15))
         
-        btn_undo = ModernButton(text="Undo", font_size="16sp", bg_color=[0.25, 0.45, 0.8, 1], bg_color_down=[0.15, 0.35, 0.65, 1])
-        btn_undo.bind(on_release=self.on_undo)
-        tools_bar.add_widget(btn_undo)
+        btn_reset = ModernButton(text="Reset Level", font_size="18sp", bg_color=[0.8, 0.6, 0.2, 1], bg_color_down=[0.7, 0.5, 0.1, 1], size_hint_x=0.5)
+        btn_reset.bind(on_release=self.on_reset_level)
+        tools_bar.add_widget(btn_reset)
         
-        btn_cheat = ModernButton(text="+ Empty Tube", font_size="16sp", bg_color=[0.8, 0.3, 0.4, 1], bg_color_down=[0.6, 0.2, 0.3, 1])
-        btn_cheat.bind(on_release=self.on_add_tube)
-        tools_bar.add_widget(btn_cheat)
+        btn_new = ModernButton(text="New Game", font_size="18sp", bg_color=[0.2, 0.7, 0.4, 1], bg_color_down=[0.15, 0.5, 0.3, 1], size_hint_x=0.5)
+        btn_new.bind(on_release=self.on_new_game)
+        tools_bar.add_widget(btn_new)
         
         self.main_box.add_widget(tools_bar)
         
@@ -95,6 +95,17 @@ class GameLayout(FloatLayout):
         # Dynamic Grid Container
         self.grid = GridLayout(rows=1, spacing=dp(10), padding=dp(15))
         self.main_box.add_widget(self.grid)
+        
+        # Next Level Overlay Button
+        self.next_level_btn = ModernButton(
+            text="Next Level", font_size="28sp", 
+            bg_color=[0.2, 0.8, 0.2, 1], bg_color_down=[0.15, 0.6, 0.15, 1],
+            size_hint=(0.6, 0.1), pos_hint={'center_x': 0.5, 'center_y': 0.5}
+        )
+        self.next_level_btn.bind(on_release=self.on_new_game)
+        self.next_level_btn.opacity = 0
+        self.next_level_btn.disabled = True
+        self.add_widget(self.next_level_btn)
         
         self.build_board()
 
@@ -152,8 +163,12 @@ class GameLayout(FloatLayout):
             
         if self.logic.is_win():
             self.status_label.text = "YOU WIN! 🎉"
+            self.next_level_btn.opacity = 1
+            self.next_level_btn.disabled = False
         else:
             self.status_label.text = ""
+            self.next_level_btn.opacity = 0
+            self.next_level_btn.disabled = True
 
     def on_tube_tap(self, tube_idx):
         if self.animating or self.logic.is_win():
