@@ -1,6 +1,7 @@
 import copy
 import math
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
 from kivy.uix.widget import Widget
@@ -14,9 +15,9 @@ from ballsort.colors import generate_kivy_colors
 from ballsort.ui.tube_widget import TubeWidget
 from ballsort.ui.widgets import ModernButton
 
-class GameLayout(BoxLayout):
+class GameLayout(FloatLayout):
     def __init__(self, **kwargs):
-        super().__init__(orientation='vertical', **kwargs)
+        super().__init__(**kwargs)
         
         # Deep Dark Background
         with self.canvas.before:
@@ -25,8 +26,12 @@ class GameLayout(BoxLayout):
         self.bind(pos=self._update_bg, size=self._update_bg)
         Window.bind(on_resize=self.on_window_resize)
         
+        # Create an absolute main container that doesn't stretch when siblings are added
+        self.main_box = BoxLayout(orientation='vertical', size_hint=(1, 1), pos_hint={'x': 0, 'y': 0})
+        self.add_widget(self.main_box)
+        
         self.logic = BallSortLogic(num_colors=5, tube_height=4, num_empty_tubes=2)
-        self.colors_list = generate_kivy_colors(20) # Generate Max potentially needed colors to be safe
+        self.colors_list = generate_kivy_colors(20) # Max potentially needed colors
         
         self.selected_tube_idx = None
         self.animating = False
@@ -52,7 +57,7 @@ class GameLayout(BoxLayout):
         btn_restart.bind(on_release=self.on_restart)
         top_bar.add_widget(btn_restart)
         
-        self.add_widget(top_bar)
+        self.main_box.add_widget(top_bar)
         
         # --- Secondary Utility Toolbar ---
         tools_bar = BoxLayout(size_hint_y=0.1, padding=[20, 5, 20, 15], spacing=15)
@@ -65,15 +70,15 @@ class GameLayout(BoxLayout):
         btn_cheat.bind(on_release=self.on_add_tube)
         tools_bar.add_widget(btn_cheat)
         
-        self.add_widget(tools_bar)
+        self.main_box.add_widget(tools_bar)
         
         # --- Notification/Win Label ---
         self.status_label = Label(text="", font_size="28sp", bold=True, color=[1, 0.8, 0.2, 1], size_hint_y=0.08)
-        self.add_widget(self.status_label)
+        self.main_box.add_widget(self.status_label)
         
         # Dynamic Grid Container
         self.grid = GridLayout(rows=1, spacing=10, padding=20)
-        self.add_widget(self.grid)
+        self.main_box.add_widget(self.grid)
         
         self.build_board()
 
@@ -89,14 +94,12 @@ class GameLayout(BoxLayout):
         if num_tubes == 0: 
             return
             
-        # Dynamically scale responsive columns based on screen width vs comfortable tube size (~90px threshold)
         max_cols_by_width = max(3, int(Window.width / 90))
         
         if num_tubes <= max_cols_by_width:
             self.grid.cols = num_tubes
             self.grid.rows = 1
         else:
-            # We enforce symmetrical wrapping
             rows = math.ceil(num_tubes / max_cols_by_width)
             self.grid.cols = math.ceil(num_tubes / rows)
             self.grid.rows = rows
@@ -162,11 +165,9 @@ class GameLayout(BoxLayout):
         ball_color_idx = self.logic.board[src_idx][-1]
         color = self.colors_list[ball_color_idx]
         
-        # Directly grab identical bounding coordinates exported from the widget itself to guarantee matching
         start_x, start_y, diam_start = src_tube_widget.get_ball_rect(len(self.logic.board[src_idx]) - 1, True)
         end_x, end_y, diam_end = dst_tube_widget.get_ball_rect(len(self.logic.board[dst_idx]), False)
         
-        # Deploy transient clone
         dummy = Widget(size_hint=(None, None), size=(diam_start, diam_start), pos=(start_x, start_y))
         with dummy.canvas:
             self.d_color = Color(*color)
@@ -188,9 +189,9 @@ class GameLayout(BoxLayout):
         self.selected_tube_idx = None
         self.refresh_ui()
         
+        # Adding dummy to FloatLayout prevents any layout disruptions
         self.add_widget(dummy)
         
-        # Animate both coordinates AND sizing, solving all layout transition inconsistencies
         anim = Animation(x=end_x, y=end_y, width=diam_end, height=diam_end, duration=0.22, t='out_quad')
         def on_anim_complete(*args):
             self.remove_widget(dummy)

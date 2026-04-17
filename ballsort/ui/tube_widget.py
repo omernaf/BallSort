@@ -18,27 +18,34 @@ class TubeWidget(Widget):
         available_w = self.width * 0.9
         available_h = self.height * 0.95
         
-        # Maintain a mathematically sound aspect ratio scaling.
-        # Height is composed of: bottom padding (0.15), capacity layers (0.85 per ball), top jump headroom (0.8)
-        ideal_h_ratio = 0.15 + (capacity * 0.85) + 0.8
+        # Base height of just the tube (no jump headroom)
+        # 0.15 (bottom padding) + capacity * 0.85 (balls) + 0.25 (top lip so it looks tightly full)
+        base_h_ratio = 0.15 + (capacity * 0.85) + 0.25
+        
+        # Total necessary height including the ball jump effect
+        total_h_ratio = base_h_ratio + 0.6
         
         if available_w <= 0 or available_h <= 0:
             return self.center_x, self.y, 10, 10
             
-        if available_h / available_w < ideal_h_ratio:
-            tube_h = available_h
-            tube_w = tube_h / ideal_h_ratio
+        if available_h / available_w < total_h_ratio:
+            total_h = available_h
+            tube_w = total_h / total_h_ratio
         else:
             tube_w = available_w
-            tube_h = tube_w * ideal_h_ratio
+            total_h = tube_w * total_h_ratio
             
-        # Absolute soft-cap for insanely large screens
         if tube_w > 90:
             tube_w = 90
-            tube_h = tube_w * ideal_h_ratio
+            total_h = tube_w * total_h_ratio
 
+        # True glass height is shorter than the full bounding box
+        tube_h = tube_w * base_h_ratio
+
+        content_y = self.y + (self.height - total_h) / 2
         tube_x = self.center_x - tube_w / 2
-        tube_y = self.y + (self.height - tube_h) / 2
+        tube_y = content_y
+        
         return tube_x, tube_y, tube_w, tube_h
 
     def get_ball_rect(self, index, is_popped_up):
@@ -51,7 +58,7 @@ class TubeWidget(Widget):
         bx = tube_x + tube_w / 2 - ball_radius
         by = tube_y + bottom_padding + (index * step_y)
         if is_popped_up:
-            by += (tube_w * 0.8) # Elevate significantly over the top rim
+            by += (tube_w * 0.7) # Elevate over the top rim
             
         return bx, by, ball_diameter
 
