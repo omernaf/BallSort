@@ -172,45 +172,79 @@ class GameLayout(FloatLayout):
     def animate_move(self, src_idx, dst_idx):
         self.animating = True
         
+        src_tube = self.logic.board[src_idx]
+        dst_tube = self.logic.board[dst_idx]
+        color_idx = src_tube[-1]
+        
+        # Calculate exactly how many matched consecutive balls exist, and how much headroom the target has
+        identical_count = 0
+        for c in reversed(src_tube):
+            if c == color_idx:
+                identical_count += 1
+            else:
+                break
+                
+        space_left = self.logic.tube_height - len(dst_tube)
+        balls_to_move = min(identical_count, space_left)
+        
         src_tube_widget = self.tube_widgets[src_idx]
         dst_tube_widget = self.tube_widgets[dst_idx]
+        color = self.colors_list[color_idx]
         
-        ball_color_idx = self.logic.board[src_idx][-1]
-        color = self.colors_list[ball_color_idx]
-        
-        start_x, start_y, diam_start = src_tube_widget.get_ball_rect(len(self.logic.board[src_idx]) - 1, True)
-        end_x, end_y, diam_end = dst_tube_widget.get_ball_rect(len(self.logic.board[dst_idx]), False)
-        
-        dummy = Widget(size_hint=(None, None), size=(diam_start, diam_start), pos=(start_x, start_y))
+        dummies = []
+        for i in range(balls_to_move):
+            src_ball_idx = len(src_tube) - balls_to_move + i
+            is_top_ball = (src_ball_idx == len(src_tube) - 1)
+            start_x, start_y, diam_start = src_tube_widget.get_ball_rect(src_ball_idx, is_top_ball)
             
-        def dummy_update(w, *args):
-            w.canvas.clear()
-            with w.canvas:
-                Color(*color)
-                Ellipse(pos=w.pos, size=w.size)
-                Color(1, 1, 1, 0.6)
-                Ellipse(pos=(w.x + w.width*0.18, w.y + w.height*0.52), size=(w.width*0.35, w.height*0.35))
-        
-        dummy.bind(pos=dummy_update, size=dummy_update)
-        dummy_update(dummy) # Force draw on frame 0 to prevent (0,0) ghosting
+            dst_ball_idx = len(dst_tube) + i
+            end_x, end_y, diam_end = dst_tube_widget.get_ball_rect(dst_ball_idx, False)
+            
+            dummy = Widget(size_hint=(None, None), size=(diam_start, diam_start), pos=(start_x, start_y))
+            
+            def dummy_update(w, c=color, *args):
+                w.canvas.clear()
+                with w.canvas:
+                    Color(*c)
+                    Ellipse(pos=w.pos, size=w.size)
+                    Color(1, 1, 1, 0.6)
+                    Ellipse(pos=(w.x + w.width*0.18, w.y + w.height*0.52), size=(w.width*0.35, w.height*0.35))
+                    
+            dummy.bind(pos=dummy_update, size=dummy_update)
+            dummy_update(dummy) 
+            
+            dummies.append((dummy, end_x, end_y, diam_end))
         
         self.logic.history.append(copy.deepcopy(self.logic.board))
-        ball_val = self.logic.board[src_idx].pop()
+        
+        # Pop logical source structure gracefully
+        for _ in range(balls_to_move):
+            self.logic.board[src_idx].pop()
+            
         self.selected_tube_idx = None
         self.refresh_ui()
         
-        # Adding dummy to FloatLayout prevents any layout disruptions
-        self.add_widget(dummy)
+        self.active_anims = balls_to_move
         
-        anim = Animation(x=end_x, y=end_y, width=diam_end, height=diam_end, duration=0.22, t='out_quad')
-        def on_anim_complete(*args):
-            self.remove_widget(dummy)
-            self.logic.board[dst_idx].append(ball_val)
-            self.animating = False
-            self.refresh_ui()
+        for dummy, end_x, end_y, diam_end in dummies:
+            self.add_widget(dummy)
             
-        anim.bind(on_complete=on_anim_complete)
-        anim.start(dummy)
+            anim = Animation(x=end_x, y=end_y, width=diam_end, height=diam_end, duration=0.22, t='out_quad')
+            
+            def create_callback(d):
+                def on_anim_complete(a, widget):
+                    self.remove_widget(d)
+                    self.active_anims -= 1
+                    # Execute logical append strictly when ALL animations complete
+                    if self.active_anims == 0:
+                        for _ in range(balls_to_move):
+                            self.logic.board[dst_idx].append(color_idx)
+                        self.animating = False
+                        self.refresh_ui()
+                return on_anim_complete
+                
+            anim.bind(on_complete=create_callback(dummy))
+            anim.start(dummy)
 
     def on_undo(self, instance):
         if not self.animating:
