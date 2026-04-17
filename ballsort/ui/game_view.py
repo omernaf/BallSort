@@ -31,7 +31,7 @@ class GameLayout(FloatLayout):
         self.add_widget(self.main_box)
         
         self.logic = BallSortLogic(num_colors=5, tube_height=4, num_empty_tubes=2)
-        self.colors_list = generate_kivy_colors(20) # Max potentially needed colors
+        self.colors_list = generate_kivy_colors(self.logic.num_colors)
         
         self.selected_tube_idx = None
         self.animating = False
@@ -107,7 +107,7 @@ class GameLayout(FloatLayout):
     def on_difficulty_change(self, spinner, text):
         num_colors = int(text)
         self.logic = BallSortLogic(num_colors=num_colors, tube_height=4, num_empty_tubes=2)
-        self.colors_list = generate_kivy_colors(max(25, num_colors + 5))
+        self.colors_list = generate_kivy_colors(self.logic.num_colors)
         self.selected_tube_idx = None
         self.build_board()
 
