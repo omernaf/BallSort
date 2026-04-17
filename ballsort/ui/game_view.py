@@ -37,6 +37,8 @@ class GameLayout(FloatLayout):
         
         self.selected_tube_idx = None
         self.animating = False
+        self.active_animations = []
+        self._pending_anim_moves = []
         
         # --- Top Menu Row ---
         top_bar = BoxLayout(size_hint_y=0.1, padding=[dp(10), dp(10), dp(10), dp(5)], spacing=dp(10))
@@ -131,6 +133,19 @@ class GameLayout(FloatLayout):
             self.grid.cols = math.ceil(num_tubes / rows)
             self.grid.rows = rows
 
+    def force_finish_animations(self):
+        if not self.animating: return
+        for anim, dummy in self.active_animations:
+            anim.cancel(dummy)
+            self.remove_widget(dummy)
+        for dst_idx, color_idx, count in self._pending_anim_moves:
+            for _ in range(count):
+                self.logic.board[dst_idx].append(color_idx)
+        self.active_animations.clear()
+        self._pending_anim_moves.clear()
+        self.animating = False
+        self.refresh_ui()
+
     def on_difficulty_change(self, *args):
         num_colors = int(self.difficulty_spinner.text)
         tube_height = int(self.height_spinner.text)
@@ -171,8 +186,11 @@ class GameLayout(FloatLayout):
             self.next_level_btn.disabled = True
 
     def on_tube_tap(self, tube_idx):
-        if self.animating or self.logic.is_win():
+        if self.logic.is_win():
             return
+            
+        if self.animating:
+            self.force_finish_animations()
             
         if self.selected_tube_idx is None:
             if len(self.logic.board[tube_idx]) > 0:
@@ -194,7 +212,12 @@ class GameLayout(FloatLayout):
                 self.refresh_ui()
 
     def animate_move(self, src_idx, dst_idx):
+        if self.animating:
+            self.force_finish_animations()
+            
         self.animating = True
+        self.active_animations = []
+        self._pending_anim_moves = []
         
         src_tube = self.logic.board[src_idx]
         dst_tube = self.logic.board[dst_idx]
@@ -248,21 +271,27 @@ class GameLayout(FloatLayout):
         self.selected_tube_idx = None
         self.refresh_ui()
         
+        self._pending_anim_moves.append((dst_idx, color_idx, balls_to_move))
+        
         self.active_anims = balls_to_move
         
         for dummy, end_x, end_y, diam_end in dummies:
             self.add_widget(dummy)
             
-            anim = Animation(x=end_x, y=end_y, width=diam_end, height=diam_end, duration=0.22, t='out_quad')
+            anim = Animation(x=end_x, y=end_y, width=diam_end, height=diam_end, duration=0.18, t='out_quad')
+            self.active_animations.append((anim, dummy))
             
             def create_callback(d):
                 def on_anim_complete(a, widget):
+                    if not self.animating: return
                     self.remove_widget(d)
                     self.active_anims -= 1
-                    # Execute logical append strictly when ALL animations complete
                     if self.active_anims == 0:
-                        for _ in range(balls_to_move):
-                            self.logic.board[dst_idx].append(color_idx)
+                        for dst, c_idx, count in self._pending_anim_moves:
+                            for _ in range(count):
+                                self.logic.board[dst].append(c_idx)
+                        self._pending_anim_moves.clear()
+                        self.active_animations.clear()
                         self.animating = False
                         self.refresh_ui()
                 return on_anim_complete
@@ -271,24 +300,24 @@ class GameLayout(FloatLayout):
             anim.start(dummy)
 
     def on_undo(self, instance):
-        if not self.animating:
-            if self.logic.undo():
-                self.selected_tube_idx = None
-                self.build_board()
+        self.force_finish_animations()
+        if self.logic.undo():
+            self.selected_tube_idx = None
+            self.build_board()
 
     def on_add_tube(self, instance):
-        if not self.animating:
-            self.logic.add_empty_tube()
-            self.build_board()
+        self.force_finish_animations()
+        self.logic.add_empty_tube()
+        self.build_board()
             
     def on_reset_level(self, instance):
-        if not self.animating:
-            self.logic.reset_level()
-            self.selected_tube_idx = None
-            self.build_board()
+        self.force_finish_animations()
+        self.logic.reset_level()
+        self.selected_tube_idx = None
+        self.build_board()
             
     def on_new_game(self, instance):
-        if not self.animating:
-            self.logic.generate_level()
-            self.selected_tube_idx = None
-            self.build_board()
+        self.force_finish_animations()
+        self.logic.generate_level()
+        self.selected_tube_idx = None
+        self.build_board()
