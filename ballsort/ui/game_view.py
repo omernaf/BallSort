@@ -65,9 +65,13 @@ class GameLayout(FloatLayout):
         
         top_bar.add_widget(Widget())
         
-        btn_restart = ModernButton(text="New", bg_color=[0.2, 0.7, 0.4, 1], bg_color_down=[0.15, 0.5, 0.3, 1], size_hint_x=None, width=100)
-        btn_restart.bind(on_release=self.on_restart)
-        top_bar.add_widget(btn_restart)
+        btn_reset = ModernButton(text="Reset", bg_color=[0.8, 0.6, 0.2, 1], bg_color_down=[0.7, 0.5, 0.1, 1], size_hint_x=None, width=70)
+        btn_reset.bind(on_release=self.on_reset_level)
+        top_bar.add_widget(btn_reset)
+        
+        btn_new = ModernButton(text="New", bg_color=[0.2, 0.7, 0.4, 1], bg_color_down=[0.15, 0.5, 0.3, 1], size_hint_x=None, width=70)
+        btn_new.bind(on_release=self.on_new_game)
+        top_bar.add_widget(btn_new)
         
         self.main_box.add_widget(top_bar)
         
@@ -257,7 +261,13 @@ class GameLayout(FloatLayout):
             self.logic.add_empty_tube()
             self.build_board()
             
-    def on_restart(self, instance):
+    def on_reset_level(self, instance):
+        if not self.animating:
+            self.logic.reset_level()
+            self.selected_tube_idx = None
+            self.build_board()
+            
+    def on_new_game(self, instance):
         if not self.animating:
             self.logic.generate_level()
             self.selected_tube_idx = None

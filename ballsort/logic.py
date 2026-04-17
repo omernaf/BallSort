@@ -7,6 +7,7 @@ class BallSortLogic:
         self.tube_height = tube_height
         self.num_empty_tubes = num_empty_tubes
         self.board = []
+        self.initial_board = []
         self.history = []
         self.generate_level()
 
@@ -51,6 +52,11 @@ class BallSortLogic:
         for i in range(self.num_empty_tubes):
             self.board.append([])
             
+        self.initial_board = copy.deepcopy(self.board)
+        self.history = []
+
+    def reset_level(self):
+        self.board = copy.deepcopy(self.initial_board)
         self.history = []
 
     def can_move(self, src_idx, dst_idx):
