@@ -2,7 +2,7 @@ import copy
 import random
 
 class BallSortLogic:
-    def __init__(self, num_colors=4, tube_height=4, num_empty_tubes=2):
+    def __init__(self, num_colors=5, tube_height=4, num_empty_tubes=2):
         self.num_colors = num_colors
         self.tube_height = tube_height
         self.num_empty_tubes = num_empty_tubes
@@ -14,46 +14,43 @@ class BallSortLogic:
         self.board = []
         self.history = []
         
-        # 1. Start with sorted tubes
-        for i in range(self.num_colors):
-            self.board.append([i] * self.tube_height)
+        # We will deal a completely chaotic, perfectly packed board.
+        # This guarantees every colored tube starts exactly full, making it vastly harder 
+        # and more complex to untangle properly.
+        # With 2 empty tubes + the `+ Empty Tube` cheat button available, any rare deadlock is gracefully bypassable.
         
-        # Add empty tubes
-        for _ in range(self.num_empty_tubes):
+        while True:
+            # 1. Create a deck containing exactly `tube_height` balls for every color
+            balls = []
+            for i in range(self.num_colors):
+                balls.extend([i] * self.tube_height)
+                
+            # 2. Maximum chaos shuffle
+            random.shuffle(balls)
+            
+            # 3. Deal perfectly into tubes
+            temp_board = []
+            for i in range(self.num_colors):
+                start = i * self.tube_height
+                end = start + self.tube_height
+                temp_board.append(balls[start:end])
+                
+            # 4. Check to ensure we didn't randomly deal an already-solved tube, 
+            #    which would reduce the target difficulty.
+            has_solved_tube = False
+            for tube in temp_board:
+                if len(set(tube)) == 1:
+                    has_solved_tube = True
+                    break
+                    
+            if not has_solved_tube:
+                self.board = temp_board
+                break
+                
+        # 5. Append perfectly empty tubes at the end
+        for i in range(self.num_empty_tubes):
             self.board.append([])
             
-        # 2. Perform sequence of random valid REVERSE moves to definitively scramble the puzzle.
-        # A valid reverse move taking a ball of color C from tube dst_idx to src_idx requires:
-        # - The tube we pull from MUST have C on top.
-        # - The tube we pull from, once C is removed, MUST be empty OR still have C on top.
-        iterations = 0
-        moves_done = 0
-        while moves_done < 1500 and iterations < 10000:
-            iterations += 1
-            src_idx = random.randint(0, len(self.board) - 1)
-            dst_idx = random.randint(0, len(self.board) - 1)
-            
-            if src_idx != dst_idx:
-                src_tube = self.board[src_idx]
-                dst_tube = self.board[dst_idx]
-                
-                # Check valid reverse move constraints:
-                if not src_tube or len(dst_tube) >= self.tube_height:
-                    continue
-                
-                color = src_tube[-1]
-                
-                # If we remove the top ball, does the source tube's new top match the valid forward rule?
-                # i.e., empty or matching color
-                if len(src_tube) > 1 and src_tube[-2] != color:
-                    continue
-                    
-                # Valid! Apply reverse move physically
-                ball = self.board[src_idx].pop()
-                self.board[dst_idx].append(ball)
-                moves_done += 1
-        
-        # Clear history to establish the "start" of the level
         self.history = []
 
     def can_move(self, src_idx, dst_idx):
@@ -90,6 +87,7 @@ class BallSortLogic:
         return False
 
     def add_empty_tube(self):
+        # The Cheat Button - essential for brute-forcing any extremely difficult seed
         self.board.append([])
 
     def is_win(self):
