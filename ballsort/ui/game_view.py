@@ -9,6 +9,7 @@ from kivy.graphics import Color, Rectangle, Ellipse
 from kivy.animation import Animation
 from kivy.uix.spinner import Spinner
 from kivy.core.window import Window
+from kivy.metrics import dp, sp
 
 from ballsort.logic import BallSortLogic
 from ballsort.colors import generate_kivy_colors
@@ -38,52 +39,50 @@ class GameLayout(FloatLayout):
         self.animating = False
         
         # --- Top Menu Row ---
-        top_bar = BoxLayout(size_hint_y=0.1, padding=[20, 15, 20, 5], spacing=10)
+        top_bar = BoxLayout(size_hint_y=0.1, padding=[dp(10), dp(10), dp(10), dp(5)], spacing=dp(10))
         
-        top_bar.add_widget(Label(text="Colors:", size_hint_x=None, width=60, font_size="16sp", bold=True))
+        top_bar.add_widget(Label(text="Colors:", size_hint_x=0.2, font_size="14sp", bold=True))
         
         self.difficulty_spinner = Spinner(
             text=str(self.logic.num_colors),
             values=tuple(str(i) for i in range(3, 21)),
-            size_hint_x=None, width=60,
+            size_hint_x=0.18,
             background_normal='', background_color=[0.15, 0.15, 0.2, 1],
-            color=[0.8, 0.8, 0.8, 1], font_name='Roboto'
+            color=[0.8, 0.8, 0.8, 1], font_name='Roboto', font_size="15sp"
         )
         self.difficulty_spinner.bind(text=self.on_difficulty_change)
         top_bar.add_widget(self.difficulty_spinner)
         
-        top_bar.add_widget(Label(text="Height:", size_hint_x=None, width=60, font_size="16sp", bold=True))
+        top_bar.add_widget(Label(text="Height:", size_hint_x=0.18, font_size="14sp", bold=True))
         
         self.height_spinner = Spinner(
             text=str(self.logic.tube_height),
             values=tuple(str(i) for i in range(4, 11)),
-            size_hint_x=None, width=60,
+            size_hint_x=0.18,
             background_normal='', background_color=[0.15, 0.15, 0.2, 1],
-            color=[0.8, 0.8, 0.8, 1], font_name='Roboto'
+            color=[0.8, 0.8, 0.8, 1], font_name='Roboto', font_size="15sp"
         )
         self.height_spinner.bind(text=self.on_difficulty_change)
         top_bar.add_widget(self.height_spinner)
         
-        top_bar.add_widget(Widget())
-        
-        btn_reset = ModernButton(text="Reset", bg_color=[0.8, 0.6, 0.2, 1], bg_color_down=[0.7, 0.5, 0.1, 1], size_hint_x=None, width=70)
+        btn_reset = ModernButton(text="Reset", font_size="14sp", bg_color=[0.8, 0.6, 0.2, 1], bg_color_down=[0.7, 0.5, 0.1, 1], size_hint_x=0.22)
         btn_reset.bind(on_release=self.on_reset_level)
         top_bar.add_widget(btn_reset)
         
-        btn_new = ModernButton(text="New", bg_color=[0.2, 0.7, 0.4, 1], bg_color_down=[0.15, 0.5, 0.3, 1], size_hint_x=None, width=70)
+        btn_new = ModernButton(text="New", font_size="14sp", bg_color=[0.2, 0.7, 0.4, 1], bg_color_down=[0.15, 0.5, 0.3, 1], size_hint_x=0.22)
         btn_new.bind(on_release=self.on_new_game)
         top_bar.add_widget(btn_new)
         
         self.main_box.add_widget(top_bar)
         
         # --- Secondary Utility Toolbar ---
-        tools_bar = BoxLayout(size_hint_y=0.1, padding=[20, 5, 20, 15], spacing=15)
+        tools_bar = BoxLayout(size_hint_y=0.1, padding=[dp(15), dp(5), dp(15), dp(5)], spacing=dp(15))
         
-        btn_undo = ModernButton(text="Undo", bg_color=[0.25, 0.45, 0.8, 1], bg_color_down=[0.15, 0.35, 0.65, 1])
+        btn_undo = ModernButton(text="Undo", font_size="16sp", bg_color=[0.25, 0.45, 0.8, 1], bg_color_down=[0.15, 0.35, 0.65, 1])
         btn_undo.bind(on_release=self.on_undo)
         tools_bar.add_widget(btn_undo)
         
-        btn_cheat = ModernButton(text="+ Empty Tube", bg_color=[0.8, 0.3, 0.4, 1], bg_color_down=[0.6, 0.2, 0.3, 1])
+        btn_cheat = ModernButton(text="+ Empty Tube", font_size="16sp", bg_color=[0.8, 0.3, 0.4, 1], bg_color_down=[0.6, 0.2, 0.3, 1])
         btn_cheat.bind(on_release=self.on_add_tube)
         tools_bar.add_widget(btn_cheat)
         
@@ -94,7 +93,7 @@ class GameLayout(FloatLayout):
         self.main_box.add_widget(self.status_label)
         
         # Dynamic Grid Container
-        self.grid = GridLayout(rows=1, spacing=10, padding=20)
+        self.grid = GridLayout(rows=1, spacing=dp(10), padding=dp(15))
         self.main_box.add_widget(self.grid)
         
         self.build_board()
@@ -111,7 +110,7 @@ class GameLayout(FloatLayout):
         if num_tubes == 0: 
             return
             
-        max_cols_by_width = max(3, int(Window.width / 90))
+        max_cols_by_width = max(4, int(Window.width / dp(80)))
         
         if num_tubes <= max_cols_by_width:
             self.grid.cols = num_tubes

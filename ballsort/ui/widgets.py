@@ -2,6 +2,7 @@ from kivy.uix.button import ButtonBehavior
 from kivy.uix.label import Label
 from kivy.graphics import Color, RoundedRectangle
 from kivy.properties import ListProperty
+from kivy.metrics import dp
 
 class ModernButton(ButtonBehavior, Label):
     bg_color = ListProperty([0.2, 0.6, 0.86, 1])
@@ -15,7 +16,7 @@ class ModernButton(ButtonBehavior, Label):
         
         with self.canvas.before:
             self.bg_instruction = Color(*self.bg_color)
-            self.rect = RoundedRectangle(pos=self.pos, size=self.size, radius=[12])
+            self.rect = RoundedRectangle(pos=self.pos, size=self.size, radius=[dp(12)])
             
         self.bind(pos=self.update_rect, size=self.update_rect)
         

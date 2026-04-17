@@ -1,6 +1,7 @@
 import math
 from kivy.uix.widget import Widget
 from kivy.graphics import Color, Ellipse, RoundedRectangle
+from kivy.metrics import dp
 
 class TubeWidget(Widget):
     def __init__(self, tube_idx, logic, colors_list, on_tap_callback, **kwargs):
@@ -15,7 +16,7 @@ class TubeWidget(Widget):
         
     def get_layout_params(self):
         capacity = self.logic.tube_height
-        available_w = self.width * 0.9
+        available_w = self.width * 0.95
         available_h = self.height * 0.95
         
         # Base height of just the tube (no jump headroom)
@@ -35,8 +36,10 @@ class TubeWidget(Widget):
             tube_w = available_w
             total_h = tube_w * total_h_ratio
             
-        if tube_w > 90:
-            tube_w = 90
+        # Instead of 90 flat pixels, scale max bounds gracefully or cap with dp
+        max_tube_w = dp(100)
+        if tube_w > max_tube_w:
+            tube_w = max_tube_w
             total_h = tube_w * total_h_ratio
 
         # True glass height is shorter than the full bounding box
@@ -58,7 +61,7 @@ class TubeWidget(Widget):
         bx = tube_x + tube_w / 2 - ball_radius
         by = tube_y + bottom_padding + (index * step_y)
         if is_popped_up:
-            by += (tube_w * 0.7) # Elevate over the top rim
+            by += (tube_w * 0.8) # Elevate higher over the top rim on phones
             
         return bx, by, ball_diameter
 
