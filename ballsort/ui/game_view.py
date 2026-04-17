@@ -202,10 +202,10 @@ class GameLayout(FloatLayout):
             
             dummy = Widget(size_hint=(None, None), size=(diam_start, diam_start), pos=(start_x, start_y))
             
-            def dummy_update(w, c=color, *args):
+            def dummy_update(w, *args):
                 w.canvas.clear()
                 with w.canvas:
-                    Color(*c)
+                    Color(*color)
                     Ellipse(pos=w.pos, size=w.size)
                     Color(1, 1, 1, 0.6)
                     Ellipse(pos=(w.x + w.width*0.18, w.y + w.height*0.52), size=(w.width*0.35, w.height*0.35))
