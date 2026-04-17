@@ -1,4 +1,5 @@
 import copy
+import math
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
@@ -6,6 +7,7 @@ from kivy.uix.widget import Widget
 from kivy.graphics import Color, Rectangle, Ellipse
 from kivy.animation import Animation
 from kivy.uix.spinner import Spinner
+from kivy.core.window import Window
 
 from ballsort.logic import BallSortLogic
 from ballsort.colors import generate_kivy_colors
@@ -16,28 +18,27 @@ class GameLayout(BoxLayout):
     def __init__(self, **kwargs):
         super().__init__(orientation='vertical', **kwargs)
         
-        # Sleek Premium Dark Background
+        # Deep Dark Background
         with self.canvas.before:
             Color(0.08, 0.08, 0.11, 1)
             self.bg = Rectangle(pos=self.pos, size=self.size)
         self.bind(pos=self._update_bg, size=self._update_bg)
+        Window.bind(on_resize=self.on_window_resize)
         
-        # Logic State initialization
         self.logic = BallSortLogic(num_colors=5, tube_height=4, num_empty_tubes=2)
-        self.colors_list = generate_kivy_colors(self.logic.num_colors)
+        self.colors_list = generate_kivy_colors(20) # Generate Max potentially needed colors to be safe
         
         self.selected_tube_idx = None
         self.animating = False
         
-        # --- Top Menu Row (Controls) ---
+        # --- Top Menu Row ---
         top_bar = BoxLayout(size_hint_y=0.1, padding=[20, 15, 20, 5], spacing=15)
         
         top_bar.add_widget(Label(text="Colors:", size_hint_x=None, width=70, font_size="16sp", bold=True))
         
-        # Spinner allowing difficulty control/tube color counts
         self.difficulty_spinner = Spinner(
             text=str(self.logic.num_colors),
-            values=('3', '4', '5', '6', '7', '8', '10'),
+            values=('3', '4', '5', '6', '7', '8', '10', '12', '15', '20'),
             size_hint_x=None, width=80,
             background_normal='', background_color=[0.15, 0.15, 0.2, 1],
             color=[0.8, 0.8, 0.8, 1], font_name='Roboto'
@@ -45,7 +46,6 @@ class GameLayout(BoxLayout):
         self.difficulty_spinner.bind(text=self.on_difficulty_change)
         top_bar.add_widget(self.difficulty_spinner)
         
-        # Spacer
         top_bar.add_widget(Widget())
         
         btn_restart = ModernButton(text="New Game", bg_color=[0.2, 0.7, 0.4, 1], bg_color_down=[0.15, 0.5, 0.3, 1], size_hint_x=None, width=130)
@@ -71,8 +71,8 @@ class GameLayout(BoxLayout):
         self.status_label = Label(text="", font_size="28sp", bold=True, color=[1, 0.8, 0.2, 1], size_hint_y=0.08)
         self.add_widget(self.status_label)
         
-        # Interactive Tube Grid Container
-        self.grid = GridLayout(rows=1, spacing=15, padding=25)
+        # Dynamic Grid Container
+        self.grid = GridLayout(rows=1, spacing=10, padding=20)
         self.add_widget(self.grid)
         
         self.build_board()
@@ -80,22 +80,37 @@ class GameLayout(BoxLayout):
     def _update_bg(self, *args):
         self.bg.pos = self.pos
         self.bg.size = self.size
+        
+    def on_window_resize(self, window, width, height):
+        self.reflow_grid()
+
+    def reflow_grid(self):
+        num_tubes = len(self.logic.board)
+        if num_tubes == 0: 
+            return
+            
+        # Dynamically scale responsive columns based on screen width vs comfortable tube size (~90px threshold)
+        max_cols_by_width = max(3, int(Window.width / 90))
+        
+        if num_tubes <= max_cols_by_width:
+            self.grid.cols = num_tubes
+            self.grid.rows = 1
+        else:
+            # We enforce symmetrical wrapping
+            rows = math.ceil(num_tubes / max_cols_by_width)
+            self.grid.cols = math.ceil(num_tubes / rows)
+            self.grid.rows = rows
 
     def on_difficulty_change(self, spinner, text):
         num_colors = int(text)
         self.logic = BallSortLogic(num_colors=num_colors, tube_height=4, num_empty_tubes=2)
-        self.colors_list = generate_kivy_colors(self.logic.num_colors)
+        self.colors_list = generate_kivy_colors(max(25, num_colors + 5))
         self.selected_tube_idx = None
         self.build_board()
 
     def build_board(self):
         self.grid.clear_widgets()
-        
-        # Automatically wrap lines natively via rows
-        if len(self.logic.board) > 7:
-            self.grid.rows = 2
-        else:
-            self.grid.rows = 1
+        self.reflow_grid()
             
         self.tube_widgets = []
         for i in range(len(self.logic.board)):
@@ -147,40 +162,26 @@ class GameLayout(BoxLayout):
         ball_color_idx = self.logic.board[src_idx][-1]
         color = self.colors_list[ball_color_idx]
         
-        # Dimensions copied off TubeWidget constants logically
-        tube_w = min(src_tube_widget.width * 0.75, 85)
-        ball_radius = tube_w * 0.41
-        ball_diameter = ball_radius * 2
-        tube_h = src_tube_widget.height * 0.75
-        bottom_padding = tube_w * 0.15
+        # Directly grab identical bounding coordinates exported from the widget itself to guarantee matching
+        start_x, start_y, diam_start = src_tube_widget.get_ball_rect(len(self.logic.board[src_idx]) - 1, True)
+        end_x, end_y, diam_end = dst_tube_widget.get_ball_rect(len(self.logic.board[dst_idx]), False)
         
-        start_x = src_tube_widget.center_x - ball_radius
-        start_y = (src_tube_widget.y + src_tube_widget.height * 0.05 + 
-                   bottom_padding + 
-                   ((len(self.logic.board[src_idx]) - 1) * ((tube_h - bottom_padding) / self.logic.tube_height)) + 
-                   (tube_h * 0.25))
-                   
-        end_x = dst_tube_widget.center_x - ball_radius
-        end_y = (dst_tube_widget.y + dst_tube_widget.height * 0.05 + 
-                 bottom_padding + 
-                 (len(self.logic.board[dst_idx]) * ((tube_h - bottom_padding) / self.logic.tube_height)))
-        
-        # Setup floating glossy duplicate
-        dummy = Widget(size_hint=(None, None), size=(ball_diameter, ball_diameter), pos=(start_x, start_y))
+        # Deploy transient clone
+        dummy = Widget(size_hint=(None, None), size=(diam_start, diam_start), pos=(start_x, start_y))
         with dummy.canvas:
             self.d_color = Color(*color)
-            self.d_ellipse = Ellipse(pos=(0, 0), size=(ball_diameter, ball_diameter))
-            self.d_refl_color = Color(1, 1, 1, 0.5)
-            self.d_refl = Ellipse(pos=(0, 0), size=(ball_diameter*0.4, ball_diameter*0.4))
+            self.d_ellipse = Ellipse(pos=(0, 0), size=(diam_start, diam_start))
+            self.d_refl_color = Color(1, 1, 1, 0.6)
+            self.d_refl = Ellipse(pos=(0, 0), size=(diam_start*0.35, diam_start*0.35))
             
         def dummy_update(w, *args):
             w.canvas.clear()
             with w.canvas:
                 Color(*color)
                 Ellipse(pos=w.pos, size=w.size)
-                Color(1, 1, 1, 0.5)
-                Ellipse(pos=(w.x + w.width*0.15, w.y + w.height*0.5), size=(w.width*0.4, w.height*0.4))
-        dummy.bind(pos=dummy_update)
+                Color(1, 1, 1, 0.6)
+                Ellipse(pos=(w.x + w.width*0.18, w.y + w.height*0.52), size=(w.width*0.35, w.height*0.35))
+        dummy.bind(pos=dummy_update, size=dummy_update)
         
         self.logic.history.append(copy.deepcopy(self.logic.board))
         ball_val = self.logic.board[src_idx].pop()
@@ -189,7 +190,8 @@ class GameLayout(BoxLayout):
         
         self.add_widget(dummy)
         
-        anim = Animation(x=end_x, y=end_y, duration=0.22, t='out_quad')
+        # Animate both coordinates AND sizing, solving all layout transition inconsistencies
+        anim = Animation(x=end_x, y=end_y, width=diam_end, height=diam_end, duration=0.22, t='out_quad')
         def on_anim_complete(*args):
             self.remove_widget(dummy)
             self.logic.board[dst_idx].append(ball_val)
