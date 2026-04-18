@@ -102,7 +102,7 @@ class GameLayout(FloatLayout):
         self.next_level_btn = ModernButton(
             text="Next Level", font_size="28sp", 
             bg_color=[0.2, 0.8, 0.2, 1], bg_color_down=[0.15, 0.6, 0.15, 1],
-            size_hint=(0.6, 0.1), pos_hint={'center_x': 0.5, 'center_y': 0.5}
+            size_hint=(0.6, 0.1), pos_hint={'center_x': 0.5, 'center_y': 2.0}
         )
         self.next_level_btn.bind(on_release=self.on_new_game)
         self.next_level_btn.opacity = 0
@@ -124,14 +124,16 @@ class GameLayout(FloatLayout):
             return
             
         max_cols_by_width = max(4, int(Window.width / dp(80)))
+        rows = math.ceil(num_tubes / max_cols_by_width)
         
-        if num_tubes <= max_cols_by_width:
-            self.grid.cols = num_tubes
-            self.grid.rows = 1
-        else:
-            rows = math.ceil(num_tubes / max_cols_by_width)
-            self.grid.cols = math.ceil(num_tubes / rows)
-            self.grid.rows = rows
+        # Prioritize squishing into 2 rows over switching to 3 rows, down to a safe minimum bounds threshold
+        if rows > 2:
+            cols_if_2_rows = math.ceil(num_tubes / 2)
+            if (Window.width / cols_if_2_rows) >= dp(30):
+                rows = 2
+                
+        self.grid.cols = math.ceil(num_tubes / rows)
+        self.grid.rows = rows
 
     def force_finish_animations(self):
         if not self.animating: return
@@ -180,10 +182,12 @@ class GameLayout(FloatLayout):
             self.status_label.text = "YOU WIN! 🎉"
             self.next_level_btn.opacity = 1
             self.next_level_btn.disabled = False
+            self.next_level_btn.pos_hint = {'center_x': 0.5, 'center_y': 0.5}
         else:
             self.status_label.text = ""
             self.next_level_btn.opacity = 0
             self.next_level_btn.disabled = True
+            self.next_level_btn.pos_hint = {'center_x': 0.5, 'center_y': 2.0}
 
     def on_tube_tap(self, tube_idx):
         if self.logic.is_win():
@@ -307,8 +311,8 @@ class GameLayout(FloatLayout):
 
     def on_add_tube(self, instance):
         self.force_finish_animations()
-        self.logic.add_empty_tube()
-        self.build_board()
+        if self.logic.add_empty_tube():
+            self.build_board()
             
     def on_reset_level(self, instance):
         self.force_finish_animations()

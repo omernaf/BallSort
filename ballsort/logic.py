@@ -121,7 +121,12 @@ class BallSortLogic:
         return False
 
     def add_empty_tube(self):
-        self.board.append([])
+        max_extra_tubes = self.num_colors * 2
+        current_extra_tubes = len(self.board) - self.num_colors
+        if current_extra_tubes < max_extra_tubes:
+            self.board.append([])
+            return True
+        return False
 
     def is_win(self):
         for tube in self.board:
