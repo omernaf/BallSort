@@ -18,6 +18,9 @@ source.include_exts = py,png,jpg,kv,atlas,json
 # (str) Application versioning (method 1)
 version = 1.0.0
 
+# (str) Icon of the application
+icon.filename = %(source.dir)s/assets/icon.png
+
 # (list) Application requirements
 # comma separated e.g. requirements = sqlite3,kivy
 requirements = python3,kivy==2.3.1,filetype

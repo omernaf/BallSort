@@ -41,28 +41,28 @@ class GameLayout(FloatLayout):
         self._pending_anim_moves = []
         
         # --- Top Menu Row ---
-        top_bar = BoxLayout(size_hint_y=0.1, padding=[dp(10), dp(10), dp(10), dp(5)], spacing=dp(10))
+        top_bar = BoxLayout(size_hint_y=None, height=dp(55), padding=[dp(10), dp(5), dp(10), dp(5)], spacing=dp(10))
         
-        top_bar.add_widget(Label(text="Colors:", size_hint_x=None, width=dp(60), font_size="15sp", bold=True))
+        top_bar.add_widget(Label(text="Colors:", size_hint_x=None, width=dp(55), font_size="15sp", bold=True))
         
         self.difficulty_spinner = Spinner(
             text=str(self.logic.num_colors),
             values=tuple(str(i) for i in range(3, 21)),
             size_hint_x=None, width=dp(55),
             background_normal='', background_color=[0.15, 0.15, 0.2, 1],
-            color=[0.8, 0.8, 0.8, 1], font_name='Roboto', font_size="15sp"
+            color=[0.8, 0.8, 0.8, 1], font_name='Roboto', font_size="16sp"
         )
         self.difficulty_spinner.bind(text=self.on_difficulty_change)
         top_bar.add_widget(self.difficulty_spinner)
         
-        top_bar.add_widget(Label(text="Height:", size_hint_x=None, width=dp(60), font_size="15sp", bold=True))
+        top_bar.add_widget(Label(text="Height:", size_hint_x=None, width=dp(55), font_size="15sp", bold=True))
         
         self.height_spinner = Spinner(
             text=str(self.logic.tube_height),
             values=tuple(str(i) for i in range(4, 11)),
             size_hint_x=None, width=dp(55),
             background_normal='', background_color=[0.15, 0.15, 0.2, 1],
-            color=[0.8, 0.8, 0.8, 1], font_name='Roboto', font_size="15sp"
+            color=[0.8, 0.8, 0.8, 1], font_name='Roboto', font_size="16sp"
         )
         self.height_spinner.bind(text=self.on_difficulty_change)
         top_bar.add_widget(self.height_spinner)
@@ -71,13 +71,13 @@ class GameLayout(FloatLayout):
         self.main_box.add_widget(top_bar)
         
         # --- Secondary Utility Toolbar ---
-        tools_bar = BoxLayout(size_hint_y=0.1, padding=[dp(10), dp(5), dp(10), dp(5)], spacing=dp(10))
+        tools_bar = BoxLayout(size_hint_y=None, height=dp(60), padding=[dp(10), dp(5), dp(10), dp(5)], spacing=dp(5))
         
-        btn_reset = ModernButton(text="Reset", font_size="16sp", bg_color=[0.8, 0.6, 0.2, 1], bg_color_down=[0.7, 0.5, 0.1, 1], size_hint_x=None, width=dp(90))
+        btn_reset = ModernButton(text="Reset", font_size="15sp", bg_color=[0.8, 0.6, 0.2, 1], bg_color_down=[0.7, 0.5, 0.1, 1], size_hint_x=None, width=dp(70))
         btn_reset.bind(on_release=self.on_reset_level)
         tools_bar.add_widget(btn_reset)
         
-        btn_new = ModernButton(text="New Level", font_size="16sp", bg_color=[0.2, 0.7, 0.4, 1], bg_color_down=[0.15, 0.5, 0.3, 1], size_hint_x=None, width=dp(100))
+        btn_new = ModernButton(text="New Level", font_size="15sp", bg_color=[0.2, 0.7, 0.4, 1], bg_color_down=[0.15, 0.5, 0.3, 1], size_hint_x=None, width=dp(95))
         btn_new.bind(on_release=self.on_new_game)
         tools_bar.add_widget(btn_new)
         
@@ -94,7 +94,7 @@ class GameLayout(FloatLayout):
         self.main_box.add_widget(tools_bar)
         
         # --- Notification/Win Label ---
-        self.status_label = Label(text="", font_size="28sp", bold=True, color=[1, 0.8, 0.2, 1], size_hint_y=0.08)
+        self.status_label = Label(text="", font_size="28sp", bold=True, color=[1, 0.8, 0.2, 1], size_hint_y=None, height=dp(40))
         self.main_box.add_widget(self.status_label)
         
         self.main_box.add_widget(Widget()) # Top Spacer
