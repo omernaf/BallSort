@@ -43,50 +43,53 @@ class GameLayout(FloatLayout):
         # --- Top Menu Row ---
         top_bar = BoxLayout(size_hint_y=0.1, padding=[dp(10), dp(10), dp(10), dp(5)], spacing=dp(10))
         
-        top_bar.add_widget(Label(text="Colors:", size_hint_x=0.2, font_size="14sp", bold=True))
+        top_bar.add_widget(Label(text="Colors:", size_hint_x=None, width=dp(60), font_size="15sp", bold=True))
         
         self.difficulty_spinner = Spinner(
             text=str(self.logic.num_colors),
             values=tuple(str(i) for i in range(3, 21)),
-            size_hint_x=0.18,
+            size_hint_x=None, width=dp(55),
             background_normal='', background_color=[0.15, 0.15, 0.2, 1],
             color=[0.8, 0.8, 0.8, 1], font_name='Roboto', font_size="15sp"
         )
         self.difficulty_spinner.bind(text=self.on_difficulty_change)
         top_bar.add_widget(self.difficulty_spinner)
         
-        top_bar.add_widget(Label(text="Height:", size_hint_x=0.18, font_size="14sp", bold=True))
+        top_bar.add_widget(Label(text="Height:", size_hint_x=None, width=dp(60), font_size="15sp", bold=True))
         
         self.height_spinner = Spinner(
             text=str(self.logic.tube_height),
             values=tuple(str(i) for i in range(4, 11)),
-            size_hint_x=0.18,
+            size_hint_x=None, width=dp(55),
             background_normal='', background_color=[0.15, 0.15, 0.2, 1],
             color=[0.8, 0.8, 0.8, 1], font_name='Roboto', font_size="15sp"
         )
         self.height_spinner.bind(text=self.on_difficulty_change)
         top_bar.add_widget(self.height_spinner)
         
-        btn_undo = ModernButton(text="Undo", font_size="12sp", bg_color=[0.25, 0.45, 0.8, 1], bg_color_down=[0.15, 0.35, 0.65, 1], size_hint_x=0.13)
-        btn_undo.bind(on_release=self.on_undo)
-        top_bar.add_widget(btn_undo)
-        
-        btn_cheat = ModernButton(text="+Tube", font_size="12sp", bg_color=[0.8, 0.3, 0.4, 1], bg_color_down=[0.6, 0.2, 0.3, 1], size_hint_x=0.13)
-        btn_cheat.bind(on_release=self.on_add_tube)
-        top_bar.add_widget(btn_cheat)
-        
+        top_bar.add_widget(Widget(size_hint_x=1)) # Push dropdowns cleanly to the left
         self.main_box.add_widget(top_bar)
         
         # --- Secondary Utility Toolbar ---
-        tools_bar = BoxLayout(size_hint_y=0.1, padding=[dp(15), dp(5), dp(15), dp(5)], spacing=dp(15))
+        tools_bar = BoxLayout(size_hint_y=0.1, padding=[dp(10), dp(5), dp(10), dp(5)], spacing=dp(10))
         
-        btn_reset = ModernButton(text="Reset Level", font_size="18sp", bg_color=[0.8, 0.6, 0.2, 1], bg_color_down=[0.7, 0.5, 0.1, 1], size_hint_x=0.5)
+        btn_reset = ModernButton(text="Reset", font_size="16sp", bg_color=[0.8, 0.6, 0.2, 1], bg_color_down=[0.7, 0.5, 0.1, 1], size_hint_x=None, width=dp(90))
         btn_reset.bind(on_release=self.on_reset_level)
         tools_bar.add_widget(btn_reset)
         
-        btn_new = ModernButton(text="New Game", font_size="18sp", bg_color=[0.2, 0.7, 0.4, 1], bg_color_down=[0.15, 0.5, 0.3, 1], size_hint_x=0.5)
+        btn_new = ModernButton(text="New Level", font_size="16sp", bg_color=[0.2, 0.7, 0.4, 1], bg_color_down=[0.15, 0.5, 0.3, 1], size_hint_x=None, width=dp(100))
         btn_new.bind(on_release=self.on_new_game)
         tools_bar.add_widget(btn_new)
+        
+        tools_bar.add_widget(Widget(size_hint_x=1)) # Flexible spacer pushing the utility buttons to extreme left/right edges
+        
+        btn_undo = ModernButton(text="Undo", font_size="15sp", bg_color=[0.25, 0.45, 0.8, 1], bg_color_down=[0.15, 0.35, 0.65, 1], size_hint_x=None, width=dp(65))
+        btn_undo.bind(on_release=self.on_undo)
+        tools_bar.add_widget(btn_undo)
+        
+        btn_cheat = ModernButton(text="+Tube", font_size="15sp", bg_color=[0.8, 0.3, 0.4, 1], bg_color_down=[0.6, 0.2, 0.3, 1], size_hint_x=None, width=dp(65))
+        btn_cheat.bind(on_release=self.on_add_tube)
+        tools_bar.add_widget(btn_cheat)
         
         self.main_box.add_widget(tools_bar)
         
