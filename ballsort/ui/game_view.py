@@ -94,9 +94,13 @@ class GameLayout(FloatLayout):
         self.status_label = Label(text="", font_size="28sp", bold=True, color=[1, 0.8, 0.2, 1], size_hint_y=0.08)
         self.main_box.add_widget(self.status_label)
         
+        self.main_box.add_widget(Widget()) # Top Spacer
+        
         # Dynamic Grid Container
-        self.grid = GridLayout(rows=1, spacing=dp(10), padding=dp(15))
+        self.grid = GridLayout(rows=1, spacing=dp(10), padding=dp(15), size_hint_y=None)
         self.main_box.add_widget(self.grid)
+        
+        self.main_box.add_widget(Widget()) # Bottom Spacer
         
         # Next Level Overlay Button
         self.next_level_btn = ModernButton(
@@ -132,8 +136,30 @@ class GameLayout(FloatLayout):
             if (Window.width / cols_if_2_rows) >= dp(30):
                 rows = 2
                 
-        self.grid.cols = math.ceil(num_tubes / rows)
+        cols = math.ceil(num_tubes / rows)
+        self.grid.cols = cols
         self.grid.rows = rows
+        
+        # Fix vertical spread by locking exact cell heights and bringing rows together
+        available_w_for_cells = Window.width - dp(30) - dp(10) * (cols - 1)
+        col_w = available_w_for_cells / cols
+        ideal_tube_w = min(col_w * 0.95, dp(100))
+        
+        capacity = self.logic.tube_height
+        base_h_ratio = 0.15 + (capacity * 0.85) + 0.25
+        total_h_ratio = base_h_ratio + 0.6
+        
+        row_h = (ideal_tube_w * total_h_ratio) / 0.95
+        max_h_allowed = Window.height * 0.65 
+        
+        total_grid_h = (row_h * rows) + (dp(10) * (rows - 1)) + dp(30)
+        if total_grid_h > max_h_allowed:
+            row_h = (max_h_allowed - dp(30) - (dp(10) * (rows - 1))) / rows
+            total_grid_h = max_h_allowed
+            
+        self.grid.row_force_default = True
+        self.grid.row_default_height = row_h
+        self.grid.height = total_grid_h
 
     def force_finish_animations(self):
         if not self.animating: return
